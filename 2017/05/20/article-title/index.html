@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  
+  <title>article title | Hexo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="description" content="Java集合框架之迭代器原理分析##1.Iterator接口      如下为Iterator的一般用法       public class CollectionTest {          public static void main(String[] args) {          Collection c = new ArrayList&amp;lt;&amp;gt;();          c.a">
+<meta property="og:type" content="article">
+<meta property="og:title" content="article title">
+<meta property="og:url" content="http://yoursite.com/2017/05/20/article-title/index.html">
+<meta property="og:site_name" content="Hexo">
+<meta property="og:description" content="Java集合框架之迭代器原理分析##1.Iterator接口      如下为Iterator的一般用法       public class CollectionTest {          public static void main(String[] args) {          Collection c = new ArrayList&amp;lt;&amp;gt;();          c.a">
+<meta property="og:updated_time" content="2017-05-20T12:12:51.317Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="article title">
+<meta name="twitter:description" content="Java集合框架之迭代器原理分析##1.Iterator接口      如下为Iterator的一般用法       public class CollectionTest {          public static void main(String[] args) {          Collection c = new ArrayList&amp;lt;&amp;gt;();          c.a">
+  
+    <link rel="alternate" href="/atom.xml" title="Hexo" type="application/atom+xml">
+  
+  
+    <link rel="icon" href="/favicon.png">
+  
+  
+    <link href="//fonts.googleapis.com/css?family=Source+Code+Pro" rel="stylesheet" type="text/css">
+  
+  <link rel="stylesheet" href="/css/style.css">
+  
+
+</head>
+
+<body>
+  <div id="container">
+    <div id="wrap">
+      <header id="header">
+  <div id="banner"></div>
+  <div id="header-outer" class="outer">
+    <div id="header-title" class="inner">
+      <h1 id="logo-wrap">
+        <a href="/" id="logo">Hexo</a>
+      </h1>
+      
+    </div>
+    <div id="header-inner" class="inner">
+      <nav id="main-nav">
+        <a id="main-nav-toggle" class="nav-icon"></a>
+        
+          <a class="main-nav-link" href="/">Home</a>
+        
+          <a class="main-nav-link" href="/archives">Archives</a>
+        
+      </nav>
+      <nav id="sub-nav">
+        
+          <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
+        
+        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+      </nav>
+      <div id="search-form-wrap">
+        <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="http://yoursite.com"></form>
+      </div>
+    </div>
+  </div>
+</header>
+      <div class="outer">
+        <section id="main"><article id="post-article-title" class="article article-type-post" itemscope itemprop="blogPost">
+  <div class="article-meta">
+    <a href="/2017/05/20/article-title/" class="article-date">
+  <time datetime="2017-05-20T12:11:32.000Z" itemprop="datePublished">2017-05-20</time>
+</a>
+    
+  </div>
+  <div class="article-inner">
+    
+    
+      <header class="article-header">
+        
+  
+    <h1 class="article-title" itemprop="name">
+      article title
+    </h1>
+  
+
+      </header>
+    
+    <div class="article-entry" itemprop="articleBody">
+      
+        <h1 id="Java集合框架之迭代器原理分析"><a href="#Java集合框架之迭代器原理分析" class="headerlink" title="Java集合框架之迭代器原理分析"></a>Java集合框架之迭代器原理分析</h1><p>##1.Iterator接口<br>      如下为Iterator的一般用法<br>       public class CollectionTest {<br>          public static void main(String[] args) {<br>          Collection<string> c = new ArrayList&lt;&gt;();<br>          c.add(“唐僧”);<br>          c.add(“孙悟空”);<br>          c.add(“猪八戒”);<br>          c.add(“沙僧”);<br>          Iterator it = c.iterator();<br>         while(it.hasNext()){<br>            System.out.println(it.next());<br>        }<br>      }<br>     }</string></p>
+<h2 id="查Iterator为接口类型-那么很显然-Collection的iterator-方法调的是Iterator的子类，"><a href="#查Iterator为接口类型-那么很显然-Collection的iterator-方法调的是Iterator的子类，" class="headerlink" title="查Iterator为接口类型,那么很显然,Collection的iterator()方法调的是Iterator的子类，"></a>查Iterator为接口类型,那么很显然,Collection的iterator()方法调的是Iterator的子类，</h2><pre><code>public interface Collection&lt;E&gt; extends Iterable&lt;E&gt; ｛......｝
+</code></pre><blockquote>
+<p>查源码知Collection也为接口类型,且继承了Itrable接口,进一步追踪Iterable,</p>
+</blockquote>
+<pre><code>public interface Iterable&lt;T&gt; {
+      Iterator&lt;T&gt; iterator();
+ }
+</code></pre><p>发现其只有一个方法,也就是iterator()，这说明Collection的iterator()方法来自其父接口Iterable，因为Collection为接口类型,所以c调用的是ArrayList重写的iterator()方法.继续追踪ArrayList的iterator()方法：发现</p>
+<pre><code>    public Iterator&lt;E&gt; iterator() {
+    return new Itr();
+  }
+private class Itr implements Iterator&lt;E&gt; {
+   int cursor;       // index of next element to return
+   int lastRet = -1; // index of last element returned; -1 if no such
+   int expectedModCount = modCount;
+
+   public boolean hasNext() {
+       return cursor != size;
+   }
+
+   @SuppressWarnings(&quot;unchecked&quot;)
+   public E next() {
+       checkForComodification();
+       int i = cursor;
+       if (i &gt;= size)
+           throw new NoSuchElementException();
+       Object[] elementData = ArrayList.this.elementData;
+       if (i &gt;= elementData.length)
+           throw new ConcurrentModificationException();
+       cursor = i + 1;
+       return (E) elementData[lastRet = i];
+   }
+</code></pre><p>###至此一切明了.回味迭代器的设计,集合子类繁多,数据存储方法也不尽相同,但都可以使用接口Iterator来实现遍历.Java使用Iterable接口定义了iterator()方法,让后让集合的源头接口之一Colleaction继承他,然后Collection的所有子类实现这个方法,要想让外界的两个方法调用各个集合类的内容,只能从各个集合类中返回其内部类d的实例,且这个内部类实现了定义这两个方法的接口Iterator.这样才能实现功能.其实要单从实现这个功能的角度看,Iterable接口是多余的,只要让collection结构直接定义iterator()方法即可,但Java为什么这么设计呢?看文档,<br>       Implementing this interface allows an object to be the target of the “for-each loop” statement.<br>       Since:<br>        1.5</p>
+<p>###从文档说明可知,Iterable接口源于JDK1.5，实现这个接口的的对象允许成为for-each语句的目标,也就是说,一个对象只要实现了这个接口,就可以使用for-each语句.</p>
+
+      
+    </div>
+    <footer class="article-footer">
+      <a data-url="http://yoursite.com/2017/05/20/article-title/" data-id="cj2x8iyxd0000lcqtj25vvlaw" class="article-share-link">Share</a>
+      
+      
+    </footer>
+  </div>
+  
+    
+<nav id="article-nav">
+  
+  
+    <a href="/2017/05/20/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
+      <strong class="article-nav-caption">Older</strong>
+      <div class="article-nav-title">Hello World</div>
+    </a>
+  
+</nav>
+
+  
+</article>
+
+</section>
+        
+          <aside id="sidebar">
+  
+    
+
+  
+    
+
+  
+    
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Archives</h3>
+    <div class="widget">
+      <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2017/05/">May 2017</a></li></ul>
+    </div>
+  </div>
+
+
+  
+    
+  <div class="widget-wrap">
+    <h3 class="widget-title">Recent Posts</h3>
+    <div class="widget">
+      <ul>
+        
+          <li>
+            <a href="/2017/05/20/article-title/">article title</a>
+          </li>
+        
+          <li>
+            <a href="/2017/05/20/hello-world/">Hello World</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+
+  
+</aside>
+        
+      </div>
+      <footer id="footer">
+  
+  <div class="outer">
+    <div id="footer-info" class="inner">
+      &copy; 2017 John Doe<br>
+      Powered by <a href="http://hexo.io/" target="_blank">Hexo</a>
+    </div>
+  </div>
+</footer>
+    </div>
+    <nav id="mobile-nav">
+  
+    <a href="/" class="mobile-nav-link">Home</a>
+  
+    <a href="/archives" class="mobile-nav-link">Archives</a>
+  
+</nav>
+    
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script>
+
+
+  <link rel="stylesheet" href="/fancybox/jquery.fancybox.css">
+  <script src="/fancybox/jquery.fancybox.pack.js"></script>
+
+
+<script src="/js/script.js"></script>
+
+  </div>
+</body>
+</html>
